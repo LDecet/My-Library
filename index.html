@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1B2A22">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
 <title>Kartei — Meine Bibliothek</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -488,12 +492,14 @@
       <div class="lib-subtabs">
         <button class="lib-subtab active" data-view="shelf">Regal</button>
         <button class="lib-subtab" data-view="list">Liste</button>
+        <button class="lib-subtab" data-view="stats">Statistik</button>
       </div>
       <div id="librarySearchWrap" style="display:none;">
         <input type="text" id="librarySearch" placeholder="Titel, Autor:in oder Genre durchsuchen…">
       </div>
       <div id="libraryShelfView"></div>
       <div id="libraryListView" style="display:none;"></div>
+      <div id="libraryStatsView" style="display:none;"></div>
     </section>
   </main>
 
@@ -1053,6 +1059,33 @@
       <p class="card-row">ISBN&nbsp; ${escapeHtml(book.isbn)}</p>
       ${book.year ? `<p class="card-row">Erschienen&nbsp; ${escapeHtml(book.year)}</p>` : ''}
       <p class="card-row">Hinzugefügt am&nbsp; ${escapeHtml(formatDate(book.dateAdded))}</p>
+
+      <div style="padding-left:4px;margin-top:12px;display:flex;gap:8px;">
+        <div style="flex:1;">
+          <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Reihe (optional)</label>
+          <input type="text" id="editSeries" value="${escapeHtml(book.series || '')}" placeholder="z.B. Inspector Morse"
+            style="width:100%;font-family:'Inter',sans-serif;font-size:12.5px;padding:6px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink);">
+        </div>
+        <div style="width:64px;">
+          <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Band</label>
+          <input type="text" id="editSeriesNumber" value="${escapeHtml(book.seriesNumber || '')}" placeholder="8" inputmode="numeric"
+            style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:6px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink);">
+        </div>
+      </div>
+
+      <div style="padding-left:4px;margin-top:14px;">
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:6px;">Bewertung</label>
+        <div id="ratingStars" style="display:flex;gap:4px;">
+          ${[1,2,3,4,5].map(n=>`<button type="button" data-star="${n}" style="background:none;border:none;font-size:22px;cursor:pointer;padding:0;line-height:1;color:${(book.rating||0)>=n ? 'var(--brass)' : 'rgba(34,32,27,0.2)'};">★</button>`).join('')}
+        </div>
+      </div>
+
+      <div style="padding-left:4px;margin-top:14px;">
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Notizen (optional)</label>
+        <textarea id="editNotes" rows="3" placeholder="Was hat dir gefallen? Würdest du es weiterempfehlen?"
+          style="width:100%;font-family:'Inter',sans-serif;font-size:12.5px;padding:8px;border:1px solid rgba(34,32,27,0.2);border-radius:2px;background:transparent;color:var(--ink);resize:vertical;">${escapeHtml(book.notes || '')}</textarea>
+      </div>
+
       <div class="status-picker">
         <label>Status</label>
         <div class="status-opts" id="statusOpts">
@@ -1066,6 +1099,18 @@
     `;
     backdrop.classList.add('show');
     let newCoverDataUrl = null;
+    let currentRating = book.rating || 0;
+
+    const ratingStarsEl = document.getElementById('ratingStars');
+    ratingStarsEl.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-star]');
+      if(!btn) return;
+      const n = parseInt(btn.dataset.star, 10);
+      currentRating = (currentRating === n) ? 0 : n; // nochmal auf denselben Stern tippen = zurücksetzen
+      ratingStarsEl.querySelectorAll('button[data-star]').forEach(b=>{
+        b.style.color = parseInt(b.dataset.star,10) <= currentRating ? 'var(--brass)' : 'rgba(34,32,27,0.2)';
+      });
+    });
 
     const coverPickBtn = document.getElementById('coverPickBtn');
     const coverFileInput = document.getElementById('coverFileInput');
@@ -1100,6 +1145,10 @@
       book.title = newTitle;
       book.author = newAuthor || 'Unbekannt';
       book.genre = document.getElementById('editGenre').value.trim();
+      book.series = document.getElementById('editSeries').value.trim();
+      book.seriesNumber = document.getElementById('editSeriesNumber').value.trim();
+      book.rating = currentRating;
+      book.notes = document.getElementById('editNotes').value.trim();
       if(newCoverDataUrl){
         book.cover = newCoverDataUrl;
       }
@@ -1135,7 +1184,8 @@
 
   function renderLibrary(){
     if(currentLibView === 'shelf') renderShelfView();
-    else renderListView();
+    else if(currentLibView === 'list') renderListView();
+    else renderStatsView();
   }
 
   function renderShelfView(){
@@ -1193,9 +1243,14 @@
     });
 
     rows = rows.slice().sort((a,b)=>{
-      let av, bv;
-      if(listSortKey === 'dateAdded'){ av = a.dateAdded||''; bv = b.dateAdded||''; }
-      else { av = (a[listSortKey]||'').toLowerCase(); bv = (b[listSortKey]||'').toLowerCase(); }
+      if(listSortKey === 'dateAdded'){
+        return ((a.dateAdded||'').localeCompare(b.dateAdded||'')) * listSortDir;
+      }
+      if(listSortKey === 'rating'){
+        return ((a.rating||0) - (b.rating||0)) * listSortDir;
+      }
+      const av = (a[listSortKey]||'').toLowerCase();
+      const bv = (b[listSortKey]||'').toLowerCase();
       return av.localeCompare(bv, 'de') * listSortDir;
     });
 
@@ -1208,6 +1263,7 @@
       {key:'title', label:'Titel'},
       {key:'author', label:'Autor:in'},
       {key:'genre', label:'Genre'},
+      {key:'rating', label:'★'},
       {key:'dateAdded', label:'Hinzugefügt'}
     ];
 
@@ -1223,6 +1279,7 @@
               <td class="col-title"><span class="lib-status-dot" style="background:${s.color};" title="${s.label}"></span>${escapeHtml(b.title)}</td>
               <td>${escapeHtml(b.author||'')}</td>
               <td class="col-meta">${escapeHtml(b.genre||'–')}</td>
+              <td class="col-meta">${b.rating ? '★'.repeat(b.rating) : '–'}</td>
               <td class="col-meta">${formatDate(b.dateAdded)}</td>
             </tr>`;
           }).join('')}
@@ -1245,6 +1302,94 @@
     });
   }
 
+  function renderStatsView(){
+    const container = document.getElementById('libraryStatsView');
+    if(library.length === 0){
+      container.innerHTML = `<div class="empty-state"><div class="glyph">📊</div><p>Noch keine Bücher erfasst -- sobald du welche hinzufügst, siehst du hier deine Lesestatistik.</p></div>`;
+      return;
+    }
+    const done = library.filter(b=>b.status==='done');
+    const reading = library.filter(b=>b.status==='reading');
+    const want = library.filter(b=>b.status==='want');
+
+    // Bücher pro Jahr (nach Datum "gelesen")
+    const perYear = {};
+    done.forEach(b=>{
+      const y = (b.dateFinished || '').slice(0,4);
+      if(!y) return;
+      perYear[y] = (perYear[y]||0) + 1;
+    });
+    const years = Object.keys(perYear).sort().reverse();
+    const maxYearCount = Math.max(1, ...Object.values(perYear));
+
+    // Genres zählen
+    const genreCounts = {};
+    library.forEach(b=>{
+      (b.genre || '').split(',').map(g=>g.trim()).filter(Boolean).forEach(g=>{
+        genreCounts[g] = (genreCounts[g]||0) + 1;
+      });
+    });
+    const topGenres = Object.entries(genreCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const maxGenreCount = Math.max(1, ...topGenres.map(g=>g[1]));
+
+    // Durchschnittsbewertung
+    const rated = library.filter(b=>b.rating > 0);
+    const avgRating = rated.length ? (rated.reduce((sum,b)=>sum+b.rating,0) / rated.length) : 0;
+
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:26px;">
+        <div style="background:rgba(76,107,79,0.14);border-radius:4px;padding:14px 10px;text-align:center;">
+          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--green-ok);">${done.length}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--cream-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">Gelesen</div>
+        </div>
+        <div style="background:rgba(124,59,63,0.14);border-radius:4px;padding:14px 10px;text-align:center;">
+          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--wine);">${reading.length}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--cream-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">Am Lesen</div>
+        </div>
+        <div style="background:rgba(176,141,87,0.14);border-radius:4px;padding:14px 10px;text-align:center;">
+          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--brass-light);">${want.length}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--cream-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">Möchte lesen</div>
+        </div>
+      </div>
+
+      ${avgRating > 0 ? `
+      <div style="margin-bottom:26px;">
+        <div class="shelf-title" style="color:var(--brass-light);">Ø Bewertung<span style="flex:1;"></span></div>
+        <p style="font-family:'Fraunces',serif;font-size:20px;margin:4px 0 0;color:var(--cream-text);">${'★'.repeat(Math.round(avgRating))}${'☆'.repeat(5-Math.round(avgRating))} <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream-dim);">(${avgRating.toFixed(1)} von ${rated.length} bewerteten Büchern)</span></p>
+      </div>` : ''}
+
+      ${years.length > 0 ? `
+      <div style="margin-bottom:26px;">
+        <div class="shelf-title" style="color:var(--brass-light);">Gelesen pro Jahr<span style="flex:1;"></span></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          ${years.map(y=>`
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream-dim);width:40px;">${y}</div>
+              <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:3px;height:16px;overflow:hidden;">
+                <div style="width:${(perYear[y]/maxYearCount*100)}%;height:100%;background:var(--green-ok);"></div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream-text);width:20px;text-align:right;">${perYear[y]}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${topGenres.length > 0 ? `
+      <div style="margin-bottom:10px;">
+        <div class="shelf-title" style="color:var(--brass-light);">Meistgelesene Genres<span style="flex:1;"></span></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          ${topGenres.map(([g,c])=>`
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-family:'Inter',sans-serif;font-size:12px;color:var(--cream-text);width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g)}</div>
+              <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:3px;height:14px;overflow:hidden;">
+                <div style="width:${(c/maxGenreCount*100)}%;height:100%;background:var(--brass);"></div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream-text);width:16px;text-align:right;">${c}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+    `;
+  }
+
   document.querySelectorAll('.lib-subtab').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       document.querySelectorAll('.lib-subtab').forEach(b=>b.classList.remove('active'));
@@ -1252,6 +1397,7 @@
       currentLibView = btn.dataset.view;
       document.getElementById('libraryShelfView').style.display = currentLibView==='shelf' ? '' : 'none';
       document.getElementById('libraryListView').style.display = currentLibView==='list' ? '' : 'none';
+      document.getElementById('libraryStatsView').style.display = currentLibView==='stats' ? '' : 'none';
       document.getElementById('librarySearchWrap').style.display = currentLibView==='list' ? 'block' : 'none';
       renderLibrary();
     });
@@ -1271,6 +1417,12 @@
   }
 
   initGate();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
 })();
 </script>
 </body>
