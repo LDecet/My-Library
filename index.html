@@ -700,7 +700,25 @@
 
     setScanStatus('<p class="loading-line">Suche „' + isbn + '“ …</p>');
 
-    // 0) Eigener Worker (Google Books + DNB + Open Library serverseitig kombiniert)
+    // Bereits in der Bibliothek? -> direkt melden statt erneut zu suchen
+    const existing = library.find(b => b.isbn === isbn);
+    if(existing){
+      const s = STATUSES.find(x=>x.key===existing.status) || STATUSES[0];
+      setScanStatus(
+        '<p class="err-line" style="color:var(--brass-light);">Dieses Buch ist bereits in deiner Bibliothek: „' + escapeHtml(existing.title) + '“ (' + escapeHtml(s.label) + ').</p>' +
+        '<button class="btn btn-ghost" id="openExistingBtn" style="width:100%;margin-top:8px;">Eintrag öffnen</button>'
+      );
+      const openBtn = document.getElementById('openExistingBtn');
+      if(openBtn){
+        openBtn.addEventListener('click', ()=>{
+          setScanStatus('');
+          openCatalogCard(existing, false);
+        });
+      }
+      return;
+    }
+
+    // 0) Eigener Worker (Google Books + Open Library serverseitig kombiniert)
     if(WORKER_URL){
       try{
         const wRes = await fetch(WORKER_URL + '?isbn=' + encodeURIComponent(isbn));
@@ -1022,7 +1040,7 @@
       <p class="card-eyebrow">${isNew ? 'Neu erfasst' : 'Katalogkarte -- bearbeitbar'}</p>
       <div class="card-head">
         <div id="coverPickBtn" style="cursor:pointer;flex-shrink:0;">${coverHtml}</div>
-        <input type="file" accept="image/*" id="coverFileInput" style="display:none;">
+        <input type="file" accept="image/*" capture="environment" id="coverFileInput" style="display:none;">
         <div class="card-meta" style="flex:1;">
           <input type="text" id="editTitle" value="${escapeHtml(book.title)}"
             style="width:100%;font-family:'Fraunces',serif;font-weight:600;font-size:19px;line-height:1.15;padding:4px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink);margin-bottom:6px;">
