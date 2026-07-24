@@ -1263,10 +1263,18 @@
   }
 
   function renderLibrary(){
-    updateHomeStats();
-    if(currentLibView === 'shelf') renderShelfView();
-    else if(currentLibView === 'list') renderListView();
-    else renderStatsView();
+    try{
+      updateHomeStats();
+      if(currentLibView === 'shelf') renderShelfView();
+      else if(currentLibView === 'list') renderListView();
+      else renderStatsView();
+    }catch(err){
+      const targetId = currentLibView === 'shelf' ? 'libraryShelfView' : currentLibView === 'list' ? 'libraryListView' : 'libraryStatsView';
+      const el = document.getElementById(targetId);
+      if(el){
+        el.innerHTML = '<div class="empty-state"><p style="color:#e08a8a;font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;text-align:left;white-space:pre-wrap;">Fehler beim Anzeigen:\n' + escapeHtml(err.message) + '\n\n' + escapeHtml(err.stack || '') + '</p></div>';
+      }
+    }
   }
 
   function renderShelfView(){
