@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#1B2A22">
+<meta name="theme-color" content="#241925">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
@@ -14,22 +14,22 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root{
-    --bg: #1B2A22;
-    --bg-2: #223529;
-    --paper: #F6EFE0;
-    --paper-2: #EFE6D2;
-    --ink: #22201B;
-    --ink-soft: #55503f;
-    --cream-text: #EDE6D6;
-    --cream-dim: #B9C2B5;
-    --brass: #B08D57;
-    --brass-light: #D8BE8E;
-    --wine: #7C3B3F;
-    --wine-dark: #5C2A2D;
-    --green-ok: #4C6B4F;
-    --line: rgba(237,230,214,0.14);
+    --bg: #241925;
+    --bg-2: #2F2131;
+    --paper: #2F2131;
+    --paper-2: #3A2C3B;
+    --ink: #F3EAF0;
+    --ink-soft: #A996A8;
+    --cream-text: #F3EAF0;
+    --cream-dim: #8C7C8B;
+    --brass: #E0A96D;
+    --brass-light: #EDC896;
+    --wine: #E0A96D;
+    --wine-dark: #C98F53;
+    --green-ok: #7FA6A0;
+    --line: rgba(243,234,240,0.12);
     --radius: 4px;
-    --shadow-card: 0 12px 28px rgba(0,0,0,0.35);
+    --shadow-card: 0 12px 28px rgba(0,0,0,0.45);
   }
   *{box-sizing:border-box;}
   body{
@@ -156,7 +156,7 @@
     cursor:pointer;
     transition: all .15s ease;
   }
-  .btn-primary{ background: var(--brass); color: #1B2A22; flex:1; }
+  .btn-primary{ background: var(--brass); color: #241925; flex:1; }
   .btn-primary:hover{ background: var(--brass-light); }
   .btn-ghost{ background: transparent; color: var(--cream-text); border-color: var(--line); }
   .btn-ghost:hover{ border-color: var(--brass); color: var(--brass-light); }
@@ -193,16 +193,10 @@
     background: var(--paper);
     color: var(--ink);
     width: 100%; max-width: 380px;
-    border-radius: 2px;
+    border-radius: 12px;
     padding: 22px 22px 20px;
     box-shadow: 0 24px 60px rgba(0,0,0,0.5);
     position: relative;
-    background-image: repeating-linear-gradient(var(--paper) 0 27px, rgba(124,59,63,0.10) 27px 28px);
-  }
-  .index-card::before{
-    content:'';
-    position:absolute; left: 46px; top:0; bottom:0;
-    width:1px; background: rgba(124,59,63,0.28);
   }
   .card-close{
     position:absolute; top:12px; right:14px;
@@ -262,7 +256,7 @@
   .status-opts{ display:flex; gap:6px; }
   .status-opts button{
     flex:1;
-    border: 1px solid rgba(34,32,27,0.2);
+    border: 1px solid rgba(243,234,240,0.2);
     background: transparent;
     color: var(--ink);
     font-size: 11.5px;
@@ -273,9 +267,7 @@
     cursor:pointer;
   }
   .status-opts button.sel{
-    background: var(--wine);
-    border-color: var(--wine);
-    color: var(--paper);
+    border-width: 1px;
   }
   .card-actions{
     margin-top: 16px;
@@ -305,7 +297,7 @@
   .lib-subtab.active{
     background: var(--brass);
     border-color: var(--brass);
-    color: #1B2A22;
+    color: #241925;
   }
   #librarySearchWrap{ margin-bottom: 16px; }
   #librarySearch{
@@ -339,7 +331,7 @@
   .lib-table thead th .arrow{ opacity:0.6; font-size:9px; margin-left:3px; }
   .lib-table tbody tr{
     cursor:pointer;
-    border-bottom: 1px solid rgba(237,230,214,0.08);
+    border-bottom: 1px solid rgba(243,234,240,0.08);
   }
   .lib-table tbody tr:hover{ background: rgba(255,255,255,0.03); }
   .lib-table tbody td{
@@ -364,9 +356,18 @@
     padding: 4px 5px;
     border-radius: 3px;
   }
-  .lib-cell-input.lib-cell-title{ font-family:'Fraunces', serif; font-weight:500; }
+  .lib-cell-input.lib-cell-title{ font-family:'Fraunces', serif; font-weight:500; min-width:150px; }
   .lib-cell-input.lib-cell-meta{ font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--cream-dim); }
-  .lib-cell-input:hover{ border-color: rgba(237,230,214,0.18); }
+  .lib-table input[data-field="author"]{ min-width:140px; }
+  .lib-table input[data-field="genre"]{ min-width:100px; }
+  .lib-table input[data-field="series"]{ min-width:140px; }
+  .lib-table input[data-field="dateFinished"]{ min-width:130px; }
+  .lib-date-empty-btn{
+    background:none; border:none; cursor:pointer; font-size:15px;
+    padding:4px 6px; opacity:0.6;
+  }
+  .lib-date-empty-btn:hover{ opacity:1; }
+  .lib-cell-input:hover{ border-color: rgba(243,234,240,0.18); }
   .lib-cell-input:focus{ outline:none; border-color: var(--brass); background: rgba(255,255,255,0.05); }
   .lib-cell-input[type="date"]{ color-scheme: dark; }
   .lib-rating-cell{ cursor:pointer; white-space:nowrap; letter-spacing:1px; }
@@ -469,8 +470,7 @@
 <div class="app">
 
   <header class="top">
-    <p class="eyebrow">Barcode → Bibliothek</p>
-    <h1 class="title">Kartei <em>für Bücher</em></h1>
+    <h1 class="title">Meine Bibliothek</h1>
   </header>
 
   <nav class="tabs">
@@ -483,11 +483,20 @@
     <!-- HOME TAB -->
     <section id="tab-home" class="active">
       <div style="padding:30px 4px 10px;">
-        <p class="eyebrow">Willkommen zurück</p>
-        <h2 style="font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin:0 0 30px;color:var(--cream-text);">Hallo Laura! <em style="font-style:italic;font-weight:400;color:var(--brass-light);">Was möchtest du heute tun?</em></h2>
-        <div style="display:flex;flex-direction:column;gap:14px;">
+        <h2 style="font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin:0 0 30px;color:var(--cream-text);line-height:1.35;">Hallo Laura!<br><em style="font-style:italic;font-weight:400;color:var(--brass-light);">Was möchtest du tun?</em></h2>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
           <button class="btn btn-primary" id="homeScanBtn" style="padding:18px;font-size:15px;">📷 Neues Buch scannen</button>
           <button class="btn btn-ghost" id="homeLibraryBtn" style="padding:18px;font-size:15px;">📚 Meine Bibliothek öffnen</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:var(--paper-2);border-radius:10px;padding:14px;">
+            <p id="homeStatCount" style="font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin:0;color:var(--cream-text);">0</p>
+            <p style="font-size:11px;margin:4px 0 0;color:var(--cream-dim);">Bücher in meiner Bibliothek</p>
+          </div>
+          <div style="background:var(--paper-2);border-radius:10px;padding:14px;">
+            <p id="homeStatGenre" style="font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0;color:var(--cream-text);">–</p>
+            <p style="font-size:11px;margin:4px 0 0;color:var(--cream-dim);">Häufigstes Genre</p>
+          </div>
         </div>
       </div>
     </section>
@@ -540,7 +549,7 @@
     <p class="card-eyebrow">Zugang zur Bibliothek</p>
     <p style="font-family:'Inter',sans-serif;font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;">Gib deinen persönlichen Zugangscode ein, um deine Bibliothek zu laden.</p>
     <input type="password" id="gateCodeInput" placeholder="Zugangscode"
-      style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:14px;padding:10px;border:1px solid rgba(34,32,27,0.25);border-radius:2px;background:transparent;color:var(--ink);margin-bottom:10px;">
+      style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:14px;padding:10px;border:1px solid rgba(243,234,240,0.25);border-radius:2px;background:transparent;color:var(--ink);margin-bottom:10px;">
     <label style="display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);margin-bottom:14px;">
       <input type="checkbox" id="gateRemember" checked> auf diesem Gerät merken
     </label>
@@ -552,10 +561,11 @@
 <script>
 (function(){
   const STATUSES = [
-    {key:'want', label:'Möchte lesen', stamp:'☆', color:'#B08D57'},
-    {key:'reading', label:'Lese gerade', stamp:'▸', color:'#7C3B3F'},
-    {key:'done', label:'Gelesen', stamp:'✓', color:'#4C6B4F'}
+    {key:'want', label:'Möchte lesen', stamp:'☆', color:'#B7A8C0'},
+    {key:'reading', label:'Lese gerade', stamp:'▸', color:'#E0A96D'},
+    {key:'done', label:'Gelesen', stamp:'✓', color:'#7FA6A0'}
   ];
+  const SHELF_ORDER = ['reading', 'want', 'done'];
 
   // Adresse deines Cloudflare Workers (macht ISBN-Suche + Cloud-Speicherung).
   const WORKER_URL = "https://buch-lookup.laura-decet.workers.dev";
@@ -893,18 +903,41 @@
     });
   }
 
+  function statusButtonsHtml(selectedKey){
+    return STATUSES.map(s=>{
+      const isSel = s.key === selectedKey;
+      const style = isSel
+        ? `background:${s.color};border-color:${s.color};color:#241925;`
+        : `background:transparent;border-color:rgba(243,234,240,0.2);color:var(--ink);`;
+      return `<button type="button" data-status="${s.key}" class="${isSel?'sel':''}" style="${style}">${s.label}</button>`;
+    }).join('');
+  }
+
+  function applyStatusSelection(container, selectedKey){
+    container.querySelectorAll('button[data-status]').forEach(b=>{
+      const s = STATUSES.find(x=>x.key===b.dataset.status);
+      const isSel = b.dataset.status === selectedKey;
+      b.classList.toggle('sel', isSel);
+      if(isSel){
+        b.style.background = s.color;
+        b.style.borderColor = s.color;
+        b.style.color = '#241925';
+      } else {
+        b.style.background = 'transparent';
+        b.style.borderColor = 'rgba(243,234,240,0.2)';
+        b.style.color = 'var(--ink)';
+      }
+    });
+  }
+
   // --- Manual entry card (used when no database has the ISBN) ---
   function openManualCard(isbn){
     cardEl.innerHTML = `
       <button class="card-close" id="cardCloseBtn" aria-label="Schliessen">×</button>
-      <p class="card-eyebrow">Nicht in Google Books oder Open Library gefunden</p>
+      <p class="card-eyebrow">ISBN nicht gefunden</p>
 
-      <div style="padding-left:4px;margin-bottom:14px;">
-        <button class="btn btn-ghost" id="ocrTriggerBtn" style="width:100%;">📷 Titelseite fotografieren &amp; Text erkennen</button>
-        <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft);margin:6px 0 0;line-height:1.5;">
-          Am besten funktioniert das mit dem <strong>bedruckten Titelblatt im Buchinneren</strong>
-          (schlichter schwarzer Text auf weiss) -- nicht mit dem bunten Umschlag, den erkennt die Texterkennung schlecht.
-        </p>
+      <div style="padding-left:4px;margin-bottom:18px;">
+        <button class="btn btn-ghost" id="ocrTriggerBtn" style="width:100%;">📷 Titelseite fotografieren</button>
         <input type="file" accept="image/*" capture="environment" id="ocrFileInput" style="display:none;">
         <div id="ocrStatus" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--wine);margin-top:8px;"></div>
         <div id="ocrLines" style="margin-top:8px;"></div>
@@ -913,19 +946,15 @@
       <div class="card-meta" style="padding-left:4px;">
         <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Titel</label>
         <input type="text" id="manualTitle" placeholder="Buchtitel eingeben"
-          style="width:100%;font-family:'Fraunces',serif;font-size:17px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);margin-bottom:12px;">
+          style="width:100%;font-family:'Fraunces',serif;font-size:17px;padding:8px 2px;border:none;border-bottom:1px solid rgba(243,234,240,0.25);background:transparent;color:var(--ink);margin-bottom:12px;">
         <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Autor:in</label>
         <input type="text" id="manualAuthor" placeholder="Autor:in eingeben"
-          style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);margin-bottom:12px;">
-        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Genre (optional)</label>
-        <input type="text" id="manualGenre" placeholder="z.B. Krimi, Roman…"
-          style="width:100%;font-family:'Inter',sans-serif;font-size:13px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);">
+          style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:8px 2px;border:none;border-bottom:1px solid rgba(243,234,240,0.25);background:transparent;color:var(--ink);">
       </div>
-      <p class="card-row">ISBN&nbsp; ${escapeHtml(isbn)}</p>
       <div class="status-picker">
         <label>Status</label>
         <div class="status-opts" id="statusOpts">
-          ${STATUSES.map(s => `<button data-status="${s.key}" class="${s.key==='want'?'sel':''}">${s.label}</button>`).join('')}
+          ${statusButtonsHtml('want')}
         </div>
       </div>
       <div class="card-actions">
@@ -940,7 +969,7 @@
       const btn = e.target.closest('button[data-status]');
       if(!btn) return;
       chosenStatus = btn.dataset.status;
-      document.querySelectorAll('#statusOpts button').forEach(b=>b.classList.toggle('sel', b.dataset.status===chosenStatus));
+      applyStatusSelection(document.getElementById('statusOpts'), chosenStatus);
     });
 
     // --- OCR: Foto aufnehmen -> Text erkennen -> Zeilen zum Zuweisen anzeigen ---
@@ -1003,8 +1032,8 @@
         ocrLines.innerHTML = lines.map((line, i) => `
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
             <span style="flex:1;font-family:'Inter',sans-serif;font-size:12.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(line)}</span>
-            <button type="button" data-line="${i}" data-target="title" style="font-size:10px;padding:4px 7px;border:1px solid rgba(34,32,27,0.25);background:transparent;border-radius:2px;cursor:pointer;color:var(--ink);">Titel</button>
-            <button type="button" data-line="${i}" data-target="author" style="font-size:10px;padding:4px 7px;border:1px solid rgba(34,32,27,0.25);background:transparent;border-radius:2px;cursor:pointer;color:var(--ink);">Autor:in</button>
+            <button type="button" data-line="${i}" data-target="title" style="font-size:10px;padding:4px 7px;border:1px solid rgba(243,234,240,0.25);background:transparent;border-radius:2px;cursor:pointer;color:var(--ink);">Titel</button>
+            <button type="button" data-line="${i}" data-target="author" style="font-size:10px;padding:4px 7px;border:1px solid rgba(243,234,240,0.25);background:transparent;border-radius:2px;cursor:pointer;color:var(--ink);">Autor:in</button>
           </div>
         `).join('');
         ocrLines.querySelectorAll('button[data-line]').forEach(btn=>{
@@ -1042,7 +1071,7 @@
         author: author || 'Unbekannt',
         cover: null,
         year: '',
-        genre: document.getElementById('manualGenre').value.trim(),
+        genre: '',
         status: chosenStatus,
         dateAdded: new Date().toISOString().slice(0,10),
         dateFinished: chosenStatus === 'done' ? new Date().toISOString().slice(0,10) : null
@@ -1062,57 +1091,70 @@
   function openCatalogCard(book, isNew){
     const coverHtml = book.cover
       ? '<img id="coverPreviewImg" class="card-cover" src="'+book.cover+'" alt="">'
-      : '<div id="coverPreviewImg" class="card-cover no-cover" style="display:flex;align-items:center;justify-content:center;font-family:IBM Plex Mono,monospace;font-size:10px;color:#55503f;text-align:center;padding:4px;line-height:1.4;">+ Cover<br>Foto</div>';
+      : '<div id="coverPreviewImg" class="card-cover no-cover" style="display:flex;align-items:center;justify-content:center;font-family:IBM Plex Mono,monospace;font-size:10px;color:#6B5C6C;text-align:center;padding:4px;line-height:1.4;">+ Cover<br>Foto</div>';
 
     cardEl.innerHTML = `
       <button class="card-close" id="cardCloseBtn" aria-label="Schliessen">×</button>
-      <p class="card-eyebrow">${isNew ? 'Neu erfasst' : 'Katalogkarte -- bearbeitbar'}</p>
+      <p class="card-eyebrow">${isNew ? 'Neu erfasst' : 'Katalogkarte'}</p>
       <div class="card-head">
         <div id="coverPickBtn" style="cursor:pointer;flex-shrink:0;">${coverHtml}</div>
         <input type="file" accept="image/*" capture="environment" id="coverFileInput" style="display:none;">
-        <div class="card-meta" style="flex:1;">
+        <div class="card-meta" style="flex:1;display:flex;flex-direction:column;gap:8px;justify-content:center;">
           <input type="text" id="editTitle" value="${escapeHtml(book.title)}"
-            style="width:100%;font-family:'Fraunces',serif;font-weight:600;font-size:19px;line-height:1.15;padding:4px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink);margin-bottom:6px;">
+            style="width:100%;font-family:'Fraunces',serif;font-weight:600;font-size:18px;line-height:1.2;padding:2px;border:none;background:transparent;color:var(--ink);">
           <input type="text" id="editAuthor" value="${escapeHtml(book.author)}"
-            style="width:100%;font-family:'Inter',sans-serif;font-size:13px;padding:4px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink-soft);margin-bottom:6px;">
-          <input type="text" id="editGenre" value="${escapeHtml(book.genre || '')}" placeholder="Genre (optional)"
-            style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink-soft);">
+            style="width:100%;font-family:'Inter',sans-serif;font-size:13px;padding:2px;border:none;background:transparent;color:var(--ink-soft);">
+          <p style="font-size:11px;color:var(--cream-dim);margin:2px 0 0;font-family:'IBM Plex Mono',monospace;">ISBN ${escapeHtml(book.isbn)}</p>
         </div>
       </div>
-      <p class="card-row">ISBN&nbsp; ${escapeHtml(book.isbn)}</p>
-      ${book.year ? `<p class="card-row">Erschienen&nbsp; ${escapeHtml(book.year)}</p>` : ''}
-      <p class="card-row">Hinzugefügt am&nbsp; ${escapeHtml(formatDate(book.dateAdded))}</p>
 
-      <div style="padding-left:4px;margin-top:12px;display:flex;gap:8px;">
+      <div style="padding-left:4px;margin-top:16px;display:flex;gap:14px;">
         <div style="flex:1;">
-          <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Reihe (optional)</label>
+          <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px;">Hinzugefügt am</label>
+          <p style="font-size:13px;color:var(--ink);margin:0;">${escapeHtml(formatDate(book.dateAdded))}</p>
+        </div>
+        <div style="flex:1;">
+          <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px;">Gelesen am</label>
+          <p style="font-size:13px;color:${book.dateFinished ? 'var(--ink)' : 'var(--ink-soft)'};margin:0;">${book.dateFinished ? escapeHtml(formatDate(book.dateFinished)) : '–'}</p>
+        </div>
+      </div>
+
+      <div style="padding-left:4px;margin-top:14px;">
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Genre</label>
+        <input type="text" id="editGenre" value="${escapeHtml(book.genre || '')}" placeholder="z.B. Krimi, Roman…"
+          style="width:100%;font-family:'Inter',sans-serif;font-size:13px;padding:6px 2px;border:none;border-bottom:1px solid rgba(243,234,240,0.2);background:transparent;color:var(--ink);">
+      </div>
+
+      <div style="padding-left:4px;margin-top:14px;display:flex;gap:8px;">
+        <div style="flex:1;">
+          <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Reihe</label>
           <input type="text" id="editSeries" value="${escapeHtml(book.series || '')}" placeholder="z.B. Inspector Morse"
-            style="width:100%;font-family:'Inter',sans-serif;font-size:12.5px;padding:6px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink);">
+            style="width:100%;font-family:'Inter',sans-serif;font-size:12.5px;padding:6px 2px;border:none;border-bottom:1px solid rgba(243,234,240,0.2);background:transparent;color:var(--ink);">
         </div>
         <div style="width:64px;">
           <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Band</label>
           <input type="text" id="editSeriesNumber" value="${escapeHtml(book.seriesNumber || '')}" placeholder="8" inputmode="numeric"
-            style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:6px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink);">
+            style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:6px 2px;border:none;border-bottom:1px solid rgba(243,234,240,0.2);background:transparent;color:var(--ink);">
         </div>
       </div>
 
       <div style="padding-left:4px;margin-top:14px;">
         <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:6px;">Bewertung</label>
         <div id="ratingStars" style="display:flex;gap:4px;">
-          ${[1,2,3,4,5].map(n=>`<button type="button" data-star="${n}" style="background:none;border:none;font-size:22px;cursor:pointer;padding:0;line-height:1;color:${(book.rating||0)>=n ? 'var(--brass)' : 'rgba(34,32,27,0.2)'};">★</button>`).join('')}
+          ${[1,2,3,4,5].map(n=>`<button type="button" data-star="${n}" style="background:none;border:none;font-size:22px;cursor:pointer;padding:0;line-height:1;color:${(book.rating||0)>=n ? 'var(--brass)' : '#5A4C5B'};">★</button>`).join('')}
         </div>
       </div>
 
       <div style="padding-left:4px;margin-top:14px;">
-        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Notizen (optional)</label>
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Notizen</label>
         <textarea id="editNotes" rows="3" placeholder="Was hat dir gefallen? Würdest du es weiterempfehlen?"
-          style="width:100%;font-family:'Inter',sans-serif;font-size:12.5px;padding:8px;border:1px solid rgba(34,32,27,0.2);border-radius:2px;background:transparent;color:var(--ink);resize:vertical;">${escapeHtml(book.notes || '')}</textarea>
+          style="width:100%;font-family:'Inter',sans-serif;font-size:12.5px;padding:8px;border:1px solid rgba(243,234,240,0.2);border-radius:6px;background:transparent;color:var(--ink);resize:vertical;">${escapeHtml(book.notes || '')}</textarea>
       </div>
 
       <div class="status-picker">
         <label>Status</label>
         <div class="status-opts" id="statusOpts">
-          ${STATUSES.map(s => `<button data-status="${s.key}" class="${book.status===s.key?'sel':''}">${s.label}</button>`).join('')}
+          ${statusButtonsHtml(book.status)}
         </div>
       </div>
       <div class="card-actions">
@@ -1131,7 +1173,7 @@
       const n = parseInt(btn.dataset.star, 10);
       currentRating = (currentRating === n) ? 0 : n; // nochmal auf denselben Stern tippen = zurücksetzen
       ratingStarsEl.querySelectorAll('button[data-star]').forEach(b=>{
-        b.style.color = parseInt(b.dataset.star,10) <= currentRating ? 'var(--brass)' : 'rgba(34,32,27,0.2)';
+        b.style.color = parseInt(b.dataset.star,10) <= currentRating ? 'var(--brass)' : '#5A4C5B';
       });
     });
 
@@ -1147,7 +1189,7 @@
       }catch(err){ /* Fehler still ignorieren, altes Cover bleibt */ }
     });
 
-    document.getElementById('cardCloseBtn').addEventListener('click', closeCatalogCard);
+      document.getElementById('cardCloseBtn').addEventListener('click', closeCatalogCard);
     document.getElementById('statusOpts').addEventListener('click', (e)=>{
       const btn = e.target.closest('button[data-status]');
       if(!btn) return;
@@ -1155,7 +1197,7 @@
       if(book.status === 'done' && !book.dateFinished){
         book.dateFinished = new Date().toISOString().slice(0,10);
       }
-      document.querySelectorAll('#statusOpts button').forEach(b=>b.classList.toggle('sel', b.dataset.status===book.status));
+      applyStatusSelection(document.getElementById('statusOpts'), book.status);
     });
     document.getElementById('cardSaveBtn').addEventListener('click', ()=>{
       const newTitle = document.getElementById('editTitle').value.trim();
@@ -1205,7 +1247,23 @@
   let listSortDir = 1; // 1 = aufsteigend, -1 = absteigend
   let currentLibView = 'shelf';
 
+  function updateHomeStats(){
+    const countEl = document.getElementById('homeStatCount');
+    const genreEl = document.getElementById('homeStatGenre');
+    if(!countEl || !genreEl) return;
+    countEl.textContent = library.length;
+    const counts = {};
+    library.forEach(b=>{
+      (b.genre || '').split(',').map(g=>g.trim()).filter(Boolean).forEach(g=>{
+        counts[g] = (counts[g]||0) + 1;
+      });
+    });
+    const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+    genreEl.textContent = top ? top[0] : '–';
+  }
+
   function renderLibrary(){
+    updateHomeStats();
     if(currentLibView === 'shelf') renderShelfView();
     else if(currentLibView === 'list') renderListView();
     else renderStatsView();
@@ -1222,7 +1280,8 @@
       return;
     }
     let html = '';
-    STATUSES.forEach(s=>{
+    SHELF_ORDER.forEach(key=>{
+      const s = STATUSES.find(x=>x.key===key);
       const books = library
         .filter(b=>b.status===s.key)
         .sort((a,b)=>a.title.localeCompare(b.title, 'de'));
@@ -1302,18 +1361,16 @@
         </tr></thead>
         <tbody>
           ${rows.map(b=>{
-            const s = STATUSES.find(x=>x.key===b.status) || STATUSES[0];
             return `<tr data-isbn="${escapeHtml(b.isbn)}">
               <td class="col-title">
-                <span class="lib-status-dot" style="background:${s.color};" title="${s.label}"></span>
                 <input type="text" class="lib-cell-input lib-cell-title" data-field="title" value="${escapeHtml(b.title)}">
               </td>
               <td><input type="text" class="lib-cell-input" data-field="author" value="${escapeHtml(b.author||'')}"></td>
               <td><input type="text" class="lib-cell-input lib-cell-meta" data-field="genre" value="${escapeHtml(b.genre||'')}"></td>
               <td><input type="text" class="lib-cell-input lib-cell-meta" data-field="series" value="${escapeHtml(b.series||'')}" placeholder="–"></td>
-              <td class="col-meta lib-rating-cell" data-isbn-rating="${escapeHtml(b.isbn)}">${[1,2,3,4,5].map(n=>`<span class="lib-star" data-star="${n}" style="color:${(b.rating||0)>=n?'var(--brass-light)':'rgba(237,230,214,0.2)'};">★</span>`).join('')}</td>
-              <td><input type="date" class="lib-cell-input lib-cell-meta" data-field="dateFinished" value="${b.dateFinished||''}"></td>
-              <td class="col-meta">${formatDate(b.dateAdded)}</td>
+              <td class="col-meta lib-rating-cell" data-isbn-rating="${escapeHtml(b.isbn)}">${[1,2,3,4,5].map(n=>`<span class="lib-star" data-star="${n}" style="color:${(b.rating||0)>=n?'var(--brass-light)':'#5A4C5B'};">★</span>`).join('')}</td>
+              <td>${dateCellHtml(b.dateFinished, 'dateFinished')}</td>
+              <td>${dateCellHtml(b.dateAdded, 'dateAdded')}</td>
               <td><button type="button" class="lib-row-open" title="Details öffnen (Status, Notizen, Cover)">›</button></td>
             </tr>`;
           }).join('')}
@@ -1330,8 +1387,7 @@
       });
     });
 
-    // Inline-Bearbeitung: Änderungen direkt in der Tabelle speichern
-    container.querySelectorAll('.lib-cell-input').forEach(input=>{
+    function bindCellInput(input){
       input.addEventListener('click', (e)=> e.stopPropagation());
       input.addEventListener('change', ()=>{
         const tr = input.closest('tr');
@@ -1349,8 +1405,23 @@
         }
         cloudSave();
         if(field === 'title' || field === 'dateFinished'){
-          renderListView(); // Sortierung/Status-Punkt evtl. betroffen
+          renderListView(); // Sortierung evtl. betroffen
         }
+      });
+    }
+
+    container.querySelectorAll('.lib-cell-input').forEach(bindCellInput);
+
+    container.querySelectorAll('.lib-date-empty-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const td = btn.closest('td');
+        const field = btn.dataset.field;
+        td.innerHTML = `<input type="date" class="lib-cell-input lib-cell-meta" data-field="${field}" value="">`;
+        const input = td.querySelector('input');
+        bindCellInput(input);
+        input.focus();
+        if(input.showPicker){ try{ input.showPicker(); }catch(err){} }
       });
     });
 
@@ -1413,18 +1484,22 @@
     const rated = library.filter(b=>b.rating > 0);
     const avgRating = rated.length ? (rated.reduce((sum,b)=>sum+b.rating,0) / rated.length) : 0;
 
+    const doneColor = STATUSES.find(s=>s.key==='done').color;
+    const readingColor = STATUSES.find(s=>s.key==='reading').color;
+    const wantColor = STATUSES.find(s=>s.key==='want').color;
+
     container.innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:26px;">
-        <div style="background:rgba(76,107,79,0.14);border-radius:4px;padding:14px 10px;text-align:center;">
-          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--green-ok);">${done.length}</div>
+        <div style="background:${doneColor}24;border-radius:10px;padding:14px 10px;text-align:center;">
+          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:${doneColor};">${done.length}</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--cream-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">Gelesen</div>
         </div>
-        <div style="background:rgba(124,59,63,0.14);border-radius:4px;padding:14px 10px;text-align:center;">
-          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--wine);">${reading.length}</div>
+        <div style="background:${readingColor}24;border-radius:10px;padding:14px 10px;text-align:center;">
+          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:${readingColor};">${reading.length}</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--cream-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">Am Lesen</div>
         </div>
-        <div style="background:rgba(176,141,87,0.14);border-radius:4px;padding:14px 10px;text-align:center;">
-          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--brass-light);">${want.length}</div>
+        <div style="background:${wantColor}24;border-radius:10px;padding:14px 10px;text-align:center;">
+          <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:${wantColor};">${want.length}</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--cream-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">Möchte lesen</div>
         </div>
       </div>
@@ -1443,7 +1518,7 @@
             <div style="display:flex;align-items:center;gap:10px;">
               <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream-dim);width:40px;">${y}</div>
               <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:3px;height:16px;overflow:hidden;">
-                <div style="width:${(perYear[y]/maxYearCount*100)}%;height:100%;background:var(--green-ok);"></div>
+                <div style="width:${(perYear[y]/maxYearCount*100)}%;height:100%;background:${doneColor};"></div>
               </div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream-text);width:20px;text-align:right;">${perYear[y]}</div>
             </div>`).join('')}
