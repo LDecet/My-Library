@@ -1306,6 +1306,13 @@
     });
   }
 
+  function dateCellHtml(value, field){
+    if(!value){
+      return `<button type="button" class="lib-date-empty-btn" data-field="${field}" aria-label="Datum setzen">📅</button>`;
+    }
+    return `<input type="date" class="lib-cell-input lib-cell-meta" data-field="${field}" value="${value}">`;
+  }
+
   function renderListView(){
     const container = document.getElementById('libraryListView');
     if(library.length === 0){
