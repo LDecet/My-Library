@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kartei — Meine Bibliothek</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --bg: #1B2A22;
+    --bg-2: #223529;
+    --paper: #F6EFE0;
+    --paper-2: #EFE6D2;
+    --ink: #22201B;
+    --ink-soft: #55503f;
+    --cream-text: #EDE6D6;
+    --cream-dim: #B9C2B5;
+    --brass: #B08D57;
+    --brass-light: #D8BE8E;
+    --wine: #7C3B3F;
+    --wine-dark: #5C2A2D;
+    --green-ok: #4C6B4F;
+    --line: rgba(237,230,214,0.14);
+    --radius: 4px;
+    --shadow-card: 0 12px 28px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(circle at 20% 0%, var(--bg-2), var(--bg) 60%);
+    color: var(--cream-text);
+    font-family: 'Inter', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  header.top{
+    padding: 28px 24px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-light);
+    margin: 0 0 6px;
+  }
+  h1.title{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 32px;
+    margin: 0;
+    letter-spacing: -0.01em;
+    color: var(--cream-text);
+  }
+  h1.title em{
+    font-style: italic;
+    font-weight: 400;
+    color: var(--brass-light);
+  }
+  nav.tabs{
+    display:flex;
+    gap: 4px;
+    padding: 14px 20px 0;
+  }
+  nav.tabs button{
+    flex:1;
+    background: none;
+    border: none;
+    color: var(--cream-dim);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 12px 8px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .2s ease;
+  }
+  nav.tabs button.active{
+    color: var(--brass-light);
+    border-bottom: 2px solid var(--brass);
+  }
+  nav.tabs button:focus-visible{ outline: 2px solid var(--brass-light); outline-offset:2px; }
+
+  main{ flex:1; padding: 22px 20px 100px; }
+  section{ display:none; }
+  section.active{ display:block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform: translateY(6px);} to{opacity:1; transform:none;} }
+
+  /* --- Scanner --- */
+  .scan-frame{
+    position: relative;
+    border-radius: var(--radius);
+    overflow:hidden;
+    border: 1px solid var(--line);
+    background: #0d1712;
+    aspect-ratio: 3/4;
+    box-shadow: var(--shadow-card);
+  }
+  #reader{ width:100%; height:100%; }
+  #reader video{ object-fit: cover; width:100% !important; height:100% !important; }
+  .scan-overlay{
+    position:absolute; inset:0;
+    pointer-events:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .scan-box{
+    width: 78%; height: 34%;
+    border: 1.5px solid var(--brass-light);
+    border-radius: 2px;
+    box-shadow: 0 0 0 999px rgba(0,0,0,0.42);
+    position:relative;
+  }
+  .scan-box::before, .scan-box::after{
+    content:''; position:absolute; width:16px; height:16px;
+    border-color: var(--brass); border-style: solid;
+  }
+  .scan-box::before{ top:-1.5px; left:-1.5px; border-width: 2px 0 0 2px; }
+  .scan-box::after{ bottom:-1.5px; right:-1.5px; border-width: 0 2px 2px 0; }
+  .scan-hint{
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--cream-dim);
+    margin-top: 14px;
+    letter-spacing: 0.03em;
+  }
+  .scan-controls{
+    margin-top:16px;
+    display:flex;
+    gap:10px;
+  }
+  .btn{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size: 13.5px;
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    border: 1px solid transparent;
+    cursor:pointer;
+    transition: all .15s ease;
+  }
+  .btn-primary{ background: var(--brass); color: #1B2A22; flex:1; }
+  .btn-primary:hover{ background: var(--brass-light); }
+  .btn-ghost{ background: transparent; color: var(--cream-text); border-color: var(--line); }
+  .btn-ghost:hover{ border-color: var(--brass); color: var(--brass-light); }
+  .btn:focus-visible{ outline: 2px solid var(--brass-light); outline-offset: 2px; }
+  .manual-entry{
+    margin-top: 14px;
+    display:flex;
+    gap: 8px;
+  }
+  .manual-entry input{
+    flex:1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    color: var(--cream-text);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 11px 12px;
+    border-radius: var(--radius);
+  }
+  .manual-entry input::placeholder{ color: var(--cream-dim); }
+  .manual-entry input:focus{ outline:none; border-color: var(--brass); }
+
+  /* --- Karteikarte (Catalog card) --- */
+  .card-backdrop{
+    position: fixed; inset:0;
+    background: rgba(10,15,12,0.72);
+    display:none;
+    align-items:center; justify-content:center;
+    padding: 24px;
+    z-index: 50;
+  }
+  .card-backdrop.show{ display:flex; animation: fadeIn .2s ease; }
+  .index-card{
+    background: var(--paper);
+    color: var(--ink);
+    width: 100%; max-width: 380px;
+    border-radius: 2px;
+    padding: 22px 22px 20px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    position: relative;
+    background-image: repeating-linear-gradient(var(--paper) 0 27px, rgba(124,59,63,0.10) 27px 28px);
+  }
+  .index-card::before{
+    content:'';
+    position:absolute; left: 46px; top:0; bottom:0;
+    width:1px; background: rgba(124,59,63,0.28);
+  }
+  .card-close{
+    position:absolute; top:12px; right:14px;
+    background:none; border:none; font-size:20px; color: var(--ink-soft);
+    cursor:pointer; line-height:1;
+  }
+  .card-head{
+    display:flex; gap: 14px;
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+  .card-cover{
+    width: 68px; height: 100px;
+    object-fit: cover;
+    border-radius: 2px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    background: var(--paper-2);
+    flex-shrink:0;
+  }
+  .card-meta{ padding-left: 6px; }
+  .card-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px; letter-spacing:0.12em; text-transform:uppercase;
+    color: var(--wine);
+    margin: 0 0 4px;
+  }
+  .card-title{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 19px;
+    line-height: 1.15;
+    margin: 0 0 4px;
+  }
+  .card-author{
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin:0;
+  }
+  .card-row{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    padding-left: 4px;
+    margin: 3px 0;
+  }
+  .status-picker{
+    padding-left: 4px;
+    margin-top: 14px;
+  }
+  .status-picker label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px; letter-spacing:0.1em; text-transform:uppercase;
+    color: var(--wine);
+    margin-bottom: 8px;
+  }
+  .status-opts{ display:flex; gap:6px; }
+  .status-opts button{
+    flex:1;
+    border: 1px solid rgba(34,32,27,0.2);
+    background: transparent;
+    color: var(--ink);
+    font-size: 11.5px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    padding: 8px 4px;
+    border-radius: 2px;
+    cursor:pointer;
+  }
+  .status-opts button.sel{
+    background: var(--wine);
+    border-color: var(--wine);
+    color: var(--paper);
+  }
+  .card-actions{
+    margin-top: 16px;
+    padding-left: 4px;
+    display:flex; gap:8px;
+  }
+  .card-actions .btn-primary{ background: var(--wine); color: var(--paper); }
+  .card-actions .btn-primary:hover{ background: var(--wine-dark); }
+
+  /* --- Library shelf --- */
+  .shelf-group{ margin-bottom: 26px; }
+  .shelf-title{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing:0.12em; text-transform:uppercase;
+    color: var(--brass-light);
+    display:flex; align-items:center; gap:8px;
+    margin-bottom: 12px;
+  }
+  .shelf-title .count{
+    background: rgba(176,141,87,0.18);
+    color: var(--brass-light);
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-size: 10.5px;
+  }
+  .shelf-title::after{
+    content:''; flex:1; height:1px; background: var(--line);
+  }
+  .book-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .book-tile{
+    cursor:pointer;
+    border-radius: var(--radius);
+    overflow:hidden;
+    background: var(--paper-2);
+    aspect-ratio: 2/3;
+    position:relative;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+  .book-tile img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .book-tile .no-cover{
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    font-family:'Fraunces', serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding: 8px;
+  }
+  .book-tile .stamp{
+    position:absolute; bottom:5px; right:5px;
+    width:20px; height:20px;
+    border-radius:50%;
+    background: rgba(76,107,79,0.92);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 11px;
+    font-weight:700;
+    border: 1.5px solid var(--paper);
+  }
+  .empty-state{
+    text-align:center;
+    padding: 50px 20px;
+    color: var(--cream-dim);
+  }
+  .empty-state .glyph{ font-size: 34px; margin-bottom: 10px; opacity:.6; }
+  .empty-state p{ font-family:'IBM Plex Mono', monospace; font-size: 12.5px; line-height:1.6; margin:0; }
+
+  .loading-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--brass-light);
+    text-align:center;
+    padding: 14px;
+  }
+  .err-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: #d98f8f;
+    text-align:center;
+    padding: 14px;
+  }
+
+  /* Detail edit sheet reuses index card styles */
+  .footer-note{
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: rgba(185,194,181,0.5);
+    padding: 18px 20px 28px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <p class="eyebrow">Barcode → Bibliothek</p>
+    <h1 class="title">Kartei <em>für Bücher</em></h1>
+  </header>
+
+  <nav class="tabs">
+    <button class="active" data-tab="scan">Scannen</button>
+    <button data-tab="library">Bibliothek</button>
+  </nav>
+
+  <main>
+    <!-- SCAN TAB -->
+    <section id="tab-scan" class="active">
+      <div class="scan-frame">
+        <div id="reader"></div>
+        <div class="scan-overlay"><div class="scan-box"></div></div>
+      </div>
+      <p class="scan-hint">Barcode auf der Buchrückseite ins Feld halten</p>
+      <div class="scan-controls">
+        <button class="btn btn-primary" id="btnStart">Kamera starten</button>
+        <button class="btn btn-ghost" id="btnStop">Stopp</button>
+      </div>
+      <div class="manual-entry">
+        <input type="text" id="manualIsbn" placeholder="oder ISBN manuell eingeben…" inputmode="numeric">
+        <button class="btn btn-ghost" id="btnManual">Suchen</button>
+      </div>
+      <div id="scanStatus"></div>
+    </section>
+
+    <!-- LIBRARY TAB -->
+    <section id="tab-library">
+      <div id="libraryContent"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">Prototyp · Daten bleiben nur für diese Sitzung gespeichert</p>
+</div>
+
+<!-- Catalog card modal -->
+<div class="card-backdrop" id="cardBackdrop">
+  <div class="index-card" id="indexCard"></div>
+</div>
+
+<script>
+(function(){
+  const STATUSES = [
+    {key:'want', label:'Möchte lesen', stamp:'☆'},
+    {key:'reading', label:'Lese gerade', stamp:'▸'},
+    {key:'done', label:'Gelesen', stamp:'✓'}
+  ];
+
+  let library = []; // {isbn,title,author,cover,status,dateAdded,dateFinished}
+  let pendingBook = null;
+  let html5QrCode = null;
+  let scanning = false;
+
+  const tabs = document.querySelectorAll('nav.tabs button');
+  const sections = { scan: document.getElementById('tab-scan'), library: document.getElementById('tab-library') };
+
+  tabs.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.values(sections).forEach(s=>s.classList.remove('active'));
+      sections[btn.dataset.tab].classList.add('active');
+      if(btn.dataset.tab === 'library') renderLibrary();
+      if(btn.dataset.tab === 'scan' && !scanning) { /* leave camera state as is */ }
+    });
+  });
+
+  // --- Scanner ---
+  const scanStatusEl = document.getElementById('scanStatus');
+
+  function setScanStatus(html){ scanStatusEl.innerHTML = html; }
+
+  document.getElementById('btnStart').addEventListener('click', startScanner);
+  document.getElementById('btnStop').addEventListener('click', stopScanner);
+
+  function startScanner(){
+    if(scanning) return;
+    if(typeof Html5Qrcode === 'undefined'){
+      setScanStatus('<p class="err-line">Scanner-Bibliothek konnte nicht geladen werden.</p>');
+      return;
+    }
+    html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 10, qrbox: { width: 250, height: 120 }, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] };
+    setScanStatus('<p class="loading-line">Kamera wird gestartet…</p>');
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText)=>{
+        if(scanning){
+          scanning = false;
+          setScanStatus('');
+          lookupIsbn(decodedText.trim());
+          stopScanner();
+        }
+      },
+      ()=>{ /* ignore per-frame scan failures */ }
+    ).then(()=>{
+      scanning = true;
+      setScanStatus('');
+    }).catch(err=>{
+      setScanStatus('<p class="err-line">Kamerazugriff nicht möglich. Bitte Berechtigung erlauben oder ISBN manuell eingeben.</p>');
+    });
+  }
+
+  function stopScanner(){
+    if(html5QrCode && scanning){
+      html5QrCode.stop().then(()=>html5QrCode.clear()).catch(()=>{});
+    } else if(html5QrCode){
+      html5QrCode.clear().catch(()=>{});
+    }
+    scanning = false;
+  }
+
+  document.getElementById('btnManual').addEventListener('click', ()=>{
+    const val = document.getElementById('manualIsbn').value.trim();
+    if(val) lookupIsbn(val);
+  });
+  document.getElementById('manualIsbn').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('btnManual').click(); }
+  });
+
+  // --- ISBN helpers ---
+  function cleanIsbn(raw){
+    return String(raw).replace(/[^0-9Xx]/g, '').toUpperCase();
+  }
+  function looksLikeIsbn(code){
+    const c = cleanIsbn(code);
+    if(c.length === 13) return c.startsWith('978') || c.startsWith('979');
+    if(c.length === 10) return true; // older ISBN-10, can't easily prefix-check
+    return false;
+  }
+
+  // --- Book lookup: Google Books first, Open Library as fallback ---
+  async function lookupIsbn(rawCode){
+    const isbn = cleanIsbn(rawCode);
+
+    if(!looksLikeIsbn(isbn)){
+      setScanStatus(
+        '<p class="err-line">„' + escapeHtml(rawCode) + '“ sieht nicht nach einer Buch-ISBN aus (die beginnt mit 978 oder 979). ' +
+        'Manche Bücher haben einen zweiten Barcode (z.\u202fB. für den Preis) direkt daneben – ' +
+        'versuche den anderen Barcode zu scannen, oder gib die ISBN unten manuell ein.</p>'
+      );
+      return;
+    }
+
+    setScanStatus('<p class="loading-line">Suche „' + isbn + '“ …</p>');
+
+    // 1) Google Books
+    try{
+      const res = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + encodeURIComponent(isbn));
+      const data = await res.json();
+      if(data.items && data.items.length > 0){
+        const info = data.items[0].volumeInfo;
+        setScanStatus('');
+        pendingBook = {
+          isbn: isbn,
+          title: info.title || 'Unbekannter Titel',
+          author: (info.authors && info.authors.join(', ')) || 'Unbekannt',
+          cover: (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) || null,
+          year: (info.publishedDate || '').slice(0,4),
+          status: 'want',
+          dateAdded: new Date().toISOString().slice(0,10),
+          dateFinished: null
+        };
+        openCatalogCard(pendingBook, true);
+        return;
+      }
+    }catch(err){ /* fall through to Open Library */ }
+
+    // 2) Open Library fallback
+    try{
+      setScanStatus('<p class="loading-line">Nicht bei Google Books – prüfe Open Library …</p>');
+      const res2 = await fetch('https://openlibrary.org/api/books?bibkeys=ISBN:' + encodeURIComponent(isbn) + '&format=json&jscmd=data');
+      const data2 = await res2.json();
+      const entry = data2['ISBN:' + isbn];
+      setScanStatus('');
+      if(!entry){
+        setScanStatus(
+          '<p class="err-line">Kein Eintrag zu ISBN ' + escapeHtml(isbn) + ' gefunden (weder Google Books noch Open Library). ' +
+          'Du kannst das Buch später von Hand ergänzen, sobald das möglich ist.</p>'
+        );
+        return;
+      }
+      pendingBook = {
+        isbn: isbn,
+        title: entry.title || 'Unbekannter Titel',
+        author: (entry.authors && entry.authors.map(a=>a.name).join(', ')) || 'Unbekannt',
+        cover: (entry.cover && (entry.cover.medium || entry.cover.small)) || null,
+        year: (entry.publish_date || '').slice(-4),
+        status: 'want',
+        dateAdded: new Date().toISOString().slice(0,10),
+        dateFinished: null
+      };
+      openCatalogCard(pendingBook, true);
+    }catch(err){
+      setScanStatus('<p class="err-line">Suche fehlgeschlagen. Verbindung prüfen.</p>');
+    }
+  }
+
+  // --- Catalog card modal ---
+  const backdrop = document.getElementById('cardBackdrop');
+  const cardEl = document.getElementById('indexCard');
+
+  function openCatalogCard(book, isNew){
+    const coverHtml = book.cover
+      ? '<img class="card-cover" src="'+book.cover+'" alt="">'
+      : '<div class="card-cover no-cover" style="display:flex;align-items:center;justify-content:center;font-family:IBM Plex Mono,monospace;font-size:10px;color:#55503f;">kein Cover</div>';
+
+    cardEl.innerHTML = `
+      <button class="card-close" id="cardCloseBtn" aria-label="Schliessen">×</button>
+      <p class="card-eyebrow">${isNew ? 'Neu erfasst' : 'Katalogkarte'}</p>
+      <div class="card-head">
+        ${coverHtml}
+        <div class="card-meta">
+          <p class="card-title">${escapeHtml(book.title)}</p>
+          <p class="card-author">${escapeHtml(book.author)}</p>
+        </div>
+      </div>
+      <p class="card-row">ISBN&nbsp; ${escapeHtml(book.isbn)}</p>
+      ${book.year ? `<p class="card-row">Erschienen&nbsp; ${escapeHtml(book.year)}</p>` : ''}
+      <div class="status-picker">
+        <label>Status</label>
+        <div class="status-opts" id="statusOpts">
+          ${STATUSES.map(s => `<button data-status="${s.key}" class="${book.status===s.key?'sel':''}">${s.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-primary" id="cardSaveBtn">${isNew ? 'Zur Bibliothek hinzufügen' : 'Speichern'}</button>
+        ${!isNew ? '<button class="btn btn-ghost" id="cardDeleteBtn">Entfernen</button>' : ''}
+      </div>
+    `;
+    backdrop.classList.add('show');
+
+    document.getElementById('cardCloseBtn').addEventListener('click', closeCatalogCard);
+    document.getElementById('statusOpts').addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-status]');
+      if(!btn) return;
+      book.status = btn.dataset.status;
+      if(book.status === 'done' && !book.dateFinished){
+        book.dateFinished = new Date().toISOString().slice(0,10);
+      }
+      document.querySelectorAll('#statusOpts button').forEach(b=>b.classList.toggle('sel', b.dataset.status===book.status));
+    });
+    document.getElementById('cardSaveBtn').addEventListener('click', ()=>{
+      if(isNew){
+        library.push(book);
+      }
+      closeCatalogCard();
+      renderLibrary();
+      document.querySelector('nav.tabs button[data-tab="library"]').click();
+    });
+    const delBtn = document.getElementById('cardDeleteBtn');
+    if(delBtn){
+      delBtn.addEventListener('click', ()=>{
+        library = library.filter(b=>b.isbn !== book.isbn);
+        closeCatalogCard();
+        renderLibrary();
+      });
+    }
+  }
+
+  function closeCatalogCard(){
+    backdrop.classList.remove('show');
+    cardEl.innerHTML = '';
+  }
+  backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeCatalogCard(); });
+
+  // --- Library rendering ---
+  function renderLibrary(){
+    const container = document.getElementById('libraryContent');
+    if(library.length === 0){
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="glyph">📖</div>
+          <p>Noch keine Bücher erfasst.<br>Scanne den Barcode auf einem Buchrücken,<br>um deine Sammlung zu beginnen.</p>
+        </div>`;
+      return;
+    }
+    let html = '';
+    STATUSES.forEach(s=>{
+      const books = library.filter(b=>b.status===s.key);
+      if(books.length===0) return;
+      html += `<div class="shelf-group">
+        <div class="shelf-title">${s.label} <span class="count">${books.length}</span></div>
+        <div class="book-grid">
+          ${books.map(b=>`
+            <div class="book-tile" data-isbn="${escapeHtml(b.isbn)}">
+              ${b.cover ? `<img src="${b.cover}" alt="${escapeHtml(b.title)}">` : `<div class="no-cover">${escapeHtml(b.title)}</div>`}
+              ${b.status==='done' ? `<div class="stamp">✓</div>` : ''}
+            </div>`).join('')}
+        </div>
+      </div>`;
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.book-tile').forEach(tile=>{
+      tile.addEventListener('click', ()=>{
+        const book = library.find(b=>b.isbn === tile.dataset.isbn);
+        if(book) openCatalogCard(book, false);
+      });
+    });
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  renderLibrary();
+})();
+</script>
+</body>
+</html>
