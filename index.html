@@ -281,6 +281,75 @@
   .card-actions .btn-primary{ background: var(--wine); color: var(--paper); }
   .card-actions .btn-primary:hover{ background: var(--wine-dark); }
 
+  /* --- Library sub-tabs & search --- */
+  .lib-subtabs{
+    display:flex; gap:6px;
+    margin-bottom:14px;
+  }
+  .lib-subtab{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--cream-dim);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .lib-subtab.active{
+    background: var(--brass);
+    border-color: var(--brass);
+    color: #1B2A22;
+  }
+  #librarySearchWrap{ margin-bottom: 16px; }
+  #librarySearch{
+    width:100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    color: var(--cream-text);
+    font-family:'Inter', sans-serif;
+    font-size: 13.5px;
+    padding: 11px 14px;
+    border-radius: var(--radius);
+  }
+  #librarySearch::placeholder{ color: var(--cream-dim); }
+  #librarySearch:focus{ outline:none; border-color: var(--brass); }
+
+  /* --- List view table --- */
+  .lib-table{ width:100%; border-collapse: collapse; }
+  .lib-table thead th{
+    text-align:left;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brass-light);
+    padding: 8px 8px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .lib-table thead th .arrow{ opacity:0.6; font-size:9px; margin-left:3px; }
+  .lib-table tbody tr{
+    cursor:pointer;
+    border-bottom: 1px solid rgba(237,230,214,0.08);
+  }
+  .lib-table tbody tr:hover{ background: rgba(255,255,255,0.03); }
+  .lib-table tbody td{
+    padding: 10px 8px;
+    font-size: 12.5px;
+    color: var(--cream-text);
+    vertical-align: top;
+  }
+  .lib-table tbody td.col-title{ font-family:'Fraunces', serif; font-weight:500; }
+  .lib-table tbody td.col-meta{ font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--cream-dim); }
+  .lib-status-dot{
+    display:inline-block; width:8px; height:8px; border-radius:50%;
+    margin-right:6px; flex-shrink:0;
+  }
+
   /* --- Library shelf --- */
   .shelf-group{ margin-bottom: 26px; }
   .shelf-title{
@@ -378,13 +447,26 @@
   </header>
 
   <nav class="tabs">
-    <button class="active" data-tab="scan">Scannen</button>
+    <button data-tab="home">Start</button>
+    <button data-tab="scan">Scannen</button>
     <button data-tab="library">Bibliothek</button>
   </nav>
 
   <main>
+    <!-- HOME TAB -->
+    <section id="tab-home" class="active">
+      <div style="padding:30px 4px 10px;">
+        <p class="eyebrow">Willkommen zurück</p>
+        <h2 style="font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin:0 0 30px;color:var(--cream-text);">Hallo Laura! <em style="font-style:italic;font-weight:400;color:var(--brass-light);">Was möchtest du heute tun?</em></h2>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <button class="btn btn-primary" id="homeScanBtn" style="padding:18px;font-size:15px;">📷 Neues Buch scannen</button>
+          <button class="btn btn-ghost" id="homeLibraryBtn" style="padding:18px;font-size:15px;">📚 Meine Bibliothek öffnen</button>
+        </div>
+      </div>
+    </section>
+
     <!-- SCAN TAB -->
-    <section id="tab-scan" class="active">
+    <section id="tab-scan">
       <div class="scan-frame">
         <div id="reader"></div>
         <div class="scan-overlay"><div class="scan-box"></div></div>
@@ -403,7 +485,15 @@
 
     <!-- LIBRARY TAB -->
     <section id="tab-library">
-      <div id="libraryContent"></div>
+      <div class="lib-subtabs">
+        <button class="lib-subtab active" data-view="shelf">Regal</button>
+        <button class="lib-subtab" data-view="list">Liste</button>
+      </div>
+      <div id="librarySearchWrap" style="display:none;">
+        <input type="text" id="librarySearch" placeholder="Titel, Autor:in oder Genre durchsuchen…">
+      </div>
+      <div id="libraryShelfView"></div>
+      <div id="libraryListView" style="display:none;"></div>
     </section>
   </main>
 
@@ -516,18 +606,19 @@
   }
 
   const tabs = document.querySelectorAll('nav.tabs button');
-  const sections = { scan: document.getElementById('tab-scan'), library: document.getElementById('tab-library') };
+  const sections = { home: document.getElementById('tab-home'), scan: document.getElementById('tab-scan'), library: document.getElementById('tab-library') };
+
+  function goToTab(name){
+    tabs.forEach(b=>b.classList.toggle('active', b.dataset.tab === name));
+    Object.entries(sections).forEach(([key,s])=>s.classList.toggle('active', key===name));
+    if(name === 'library') renderLibrary();
+  }
 
   tabs.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      tabs.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      Object.values(sections).forEach(s=>s.classList.remove('active'));
-      sections[btn.dataset.tab].classList.add('active');
-      if(btn.dataset.tab === 'library') renderLibrary();
-      if(btn.dataset.tab === 'scan' && !scanning) { /* leave camera state as is */ }
-    });
+    btn.addEventListener('click', ()=> goToTab(btn.dataset.tab));
   });
+  document.getElementById('homeScanBtn').addEventListener('click', ()=> goToTab('scan'));
+  document.getElementById('homeLibraryBtn').addEventListener('click', ()=> goToTab('library'));
 
   // --- Scanner ---
   const scanStatusEl = document.getElementById('scanStatus');
@@ -622,6 +713,7 @@
             author: wData.author || 'Unbekannt',
             cover: wData.cover || null,
             year: wData.year || '',
+            genre: wData.genre || '',
             status: 'want',
             dateAdded: new Date().toISOString().slice(0,10),
             dateFinished: null
@@ -651,6 +743,7 @@
           author: (info.authors && info.authors.join(', ')) || 'Unbekannt',
           cover: (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) || null,
           year: (info.publishedDate || '').slice(0,4),
+          genre: (info.categories && info.categories.join(', ')) || '',
           status: 'want',
           dateAdded: new Date().toISOString().slice(0,10),
           dateFinished: null
@@ -678,6 +771,7 @@
         author: (entry.authors && entry.authors.map(a=>a.name).join(', ')) || 'Unbekannt',
         cover: (entry.cover && (entry.cover.medium || entry.cover.small)) || null,
         year: (entry.publish_date || '').slice(-4),
+        genre: (entry.subjects && entry.subjects.slice(0,2).map(s=>s.name).join(', ')) || '',
         status: 'want',
         dateAdded: new Date().toISOString().slice(0,10),
         dateFinished: null
@@ -758,14 +852,6 @@
       <button class="card-close" id="cardCloseBtn" aria-label="Schliessen">×</button>
       <p class="card-eyebrow">Nicht in Google Books oder Open Library gefunden</p>
 
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;padding-left:4px;">
-        <div id="coverPickBtn" style="width:68px;height:100px;border-radius:2px;background:var(--paper-2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0;border:1px dashed rgba(34,32,27,0.3);">
-          <span id="coverPickLabel" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink-soft);text-align:center;padding:4px;line-height:1.4;">+ Cover<br>Foto</span>
-        </div>
-        <p style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft);line-height:1.5;margin:0;">Tippe auf das Feld für ein Coverfoto (Kamera oder Galerie) -- optional.</p>
-        <input type="file" accept="image/*" id="coverFileInput" style="display:none;">
-      </div>
-
       <div style="padding-left:4px;margin-bottom:14px;">
         <button class="btn btn-ghost" id="ocrTriggerBtn" style="width:100%;">📷 Titelseite fotografieren &amp; Text erkennen</button>
         <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft);margin:6px 0 0;line-height:1.5;">
@@ -783,7 +869,10 @@
           style="width:100%;font-family:'Fraunces',serif;font-size:17px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);margin-bottom:12px;">
         <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Autor:in</label>
         <input type="text" id="manualAuthor" placeholder="Autor:in eingeben"
-          style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);">
+          style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);margin-bottom:12px;">
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Genre (optional)</label>
+        <input type="text" id="manualGenre" placeholder="z.B. Krimi, Roman…"
+          style="width:100%;font-family:'Inter',sans-serif;font-size:13px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);">
       </div>
       <p class="card-row">ISBN&nbsp; ${escapeHtml(isbn)}</p>
       <div class="status-picker">
@@ -798,7 +887,6 @@
     `;
     backdrop.classList.add('show');
     let chosenStatus = 'want';
-    let selectedCoverDataUrl = null;
 
     document.getElementById('cardCloseBtn').addEventListener('click', closeCatalogCard);
     document.getElementById('statusOpts').addEventListener('click', (e)=>{
@@ -806,22 +894,6 @@
       if(!btn) return;
       chosenStatus = btn.dataset.status;
       document.querySelectorAll('#statusOpts button').forEach(b=>b.classList.toggle('sel', b.dataset.status===chosenStatus));
-    });
-
-    // --- Cover-Foto auswählen ---
-    const coverPickBtn = document.getElementById('coverPickBtn');
-    const coverFileInput = document.getElementById('coverFileInput');
-    coverPickBtn.addEventListener('click', ()=> coverFileInput.click());
-    coverFileInput.addEventListener('change', async ()=>{
-      const file = coverFileInput.files && coverFileInput.files[0];
-      if(!file) return;
-      document.getElementById('coverPickLabel').textContent = 'lädt …';
-      try{
-        selectedCoverDataUrl = await compressImageToDataUrl(file);
-        coverPickBtn.innerHTML = `<img src="${selectedCoverDataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-      }catch(err){
-        document.getElementById('coverPickLabel').textContent = '+ Cover Foto';
-      }
     });
 
     // --- OCR: Foto aufnehmen -> Text erkennen -> Zeilen zum Zuweisen anzeigen ---
@@ -921,8 +993,9 @@
         isbn: isbn,
         title: title,
         author: author || 'Unbekannt',
-        cover: selectedCoverDataUrl,
+        cover: null,
         year: '',
+        genre: document.getElementById('manualGenre').value.trim(),
         status: chosenStatus,
         dateAdded: new Date().toISOString().slice(0,10),
         dateFinished: chosenStatus === 'done' ? new Date().toISOString().slice(0,10) : null
@@ -954,11 +1027,14 @@
           <input type="text" id="editTitle" value="${escapeHtml(book.title)}"
             style="width:100%;font-family:'Fraunces',serif;font-weight:600;font-size:19px;line-height:1.15;padding:4px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink);margin-bottom:6px;">
           <input type="text" id="editAuthor" value="${escapeHtml(book.author)}"
-            style="width:100%;font-family:'Inter',sans-serif;font-size:13px;padding:4px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink-soft);">
+            style="width:100%;font-family:'Inter',sans-serif;font-size:13px;padding:4px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink-soft);margin-bottom:6px;">
+          <input type="text" id="editGenre" value="${escapeHtml(book.genre || '')}" placeholder="Genre (optional)"
+            style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.2);background:transparent;color:var(--ink-soft);">
         </div>
       </div>
       <p class="card-row">ISBN&nbsp; ${escapeHtml(book.isbn)}</p>
       ${book.year ? `<p class="card-row">Erschienen&nbsp; ${escapeHtml(book.year)}</p>` : ''}
+      <p class="card-row">Hinzugefügt am&nbsp; ${escapeHtml(formatDate(book.dateAdded))}</p>
       <div class="status-picker">
         <label>Status</label>
         <div class="status-opts" id="statusOpts">
@@ -1005,6 +1081,7 @@
       }
       book.title = newTitle;
       book.author = newAuthor || 'Unbekannt';
+      book.genre = document.getElementById('editGenre').value.trim();
       if(newCoverDataUrl){
         book.cover = newCoverDataUrl;
       }
@@ -1034,8 +1111,17 @@
   backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeCatalogCard(); });
 
   // --- Library rendering ---
+  let listSortKey = 'title';
+  let listSortDir = 1; // 1 = aufsteigend, -1 = absteigend
+  let currentLibView = 'shelf';
+
   function renderLibrary(){
-    const container = document.getElementById('libraryContent');
+    if(currentLibView === 'shelf') renderShelfView();
+    else renderListView();
+  }
+
+  function renderShelfView(){
+    const container = document.getElementById('libraryShelfView');
     if(library.length === 0){
       container.innerHTML = `
         <div class="empty-state">
@@ -1068,6 +1154,98 @@
         if(book) openCatalogCard(book, false);
       });
     });
+  }
+
+  function renderListView(){
+    const container = document.getElementById('libraryListView');
+    if(library.length === 0){
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="glyph">📖</div>
+          <p>Noch keine Bücher erfasst.<br>Scanne den Barcode auf einem Buchrücken,<br>um deine Sammlung zu beginnen.</p>
+        </div>`;
+      return;
+    }
+    const query = (document.getElementById('librarySearch').value || '').trim().toLowerCase();
+    let rows = library.filter(b=>{
+      if(!query) return true;
+      return (b.title||'').toLowerCase().includes(query)
+        || (b.author||'').toLowerCase().includes(query)
+        || (b.genre||'').toLowerCase().includes(query);
+    });
+
+    rows = rows.slice().sort((a,b)=>{
+      let av, bv;
+      if(listSortKey === 'dateAdded'){ av = a.dateAdded||''; bv = b.dateAdded||''; }
+      else { av = (a[listSortKey]||'').toLowerCase(); bv = (b[listSortKey]||'').toLowerCase(); }
+      return av.localeCompare(bv, 'de') * listSortDir;
+    });
+
+    if(rows.length === 0){
+      container.innerHTML = `<div class="empty-state"><p>Keine Treffer für „${escapeHtml(query)}“.</p></div>`;
+      return;
+    }
+
+    const cols = [
+      {key:'title', label:'Titel'},
+      {key:'author', label:'Autor:in'},
+      {key:'genre', label:'Genre'},
+      {key:'dateAdded', label:'Hinzugefügt'}
+    ];
+
+    container.innerHTML = `
+      <table class="lib-table">
+        <thead><tr>
+          ${cols.map(c=>`<th data-key="${c.key}">${c.label}${listSortKey===c.key ? `<span class="arrow">${listSortDir===1?'▲':'▼'}</span>` : ''}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${rows.map(b=>{
+            const s = STATUSES.find(x=>x.key===b.status) || STATUSES[0];
+            return `<tr data-isbn="${escapeHtml(b.isbn)}">
+              <td class="col-title"><span class="lib-status-dot" style="background:${s.color};" title="${s.label}"></span>${escapeHtml(b.title)}</td>
+              <td>${escapeHtml(b.author||'')}</td>
+              <td class="col-meta">${escapeHtml(b.genre||'–')}</td>
+              <td class="col-meta">${formatDate(b.dateAdded)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+
+    container.querySelectorAll('thead th').forEach(th=>{
+      th.addEventListener('click', ()=>{
+        const key = th.dataset.key;
+        if(listSortKey === key){ listSortDir *= -1; }
+        else { listSortKey = key; listSortDir = 1; }
+        renderListView();
+      });
+    });
+    container.querySelectorAll('tbody tr').forEach(tr=>{
+      tr.addEventListener('click', ()=>{
+        const book = library.find(b=>b.isbn === tr.dataset.isbn);
+        if(book) openCatalogCard(book, false);
+      });
+    });
+  }
+
+  document.querySelectorAll('.lib-subtab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.lib-subtab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentLibView = btn.dataset.view;
+      document.getElementById('libraryShelfView').style.display = currentLibView==='shelf' ? '' : 'none';
+      document.getElementById('libraryListView').style.display = currentLibView==='list' ? '' : 'none';
+      document.getElementById('librarySearchWrap').style.display = currentLibView==='list' ? 'block' : 'none';
+      renderLibrary();
+    });
+  });
+  document.getElementById('librarySearch').addEventListener('input', ()=>{
+    if(currentLibView === 'list') renderListView();
+  });
+
+  function formatDate(iso){
+    if(!iso) return '–';
+    const [y,m,d] = iso.split('-');
+    return `${d}.${m}.${y}`;
   }
 
   function escapeHtml(str){
