@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root{
     --bg: #1B2A22;
@@ -422,6 +423,11 @@
     {key:'done', label:'Gelesen', stamp:'✓'}
   ];
 
+  // Trage hier die Adresse deines Cloudflare Workers ein, z.B.
+  // "https://buch-lookup.deinname.workers.dev" -- ohne Schrägstrich am Ende.
+  // Leer lassen, um weiterhin nur Google Books + Open Library direkt zu nutzen.
+  const WORKER_URL = "";
+
   let library = []; // {isbn,title,author,cover,status,dateAdded,dateFinished}
   let pendingBook = null;
   let html5QrCode = null;
@@ -521,6 +527,35 @@
 
     setScanStatus('<p class="loading-line">Suche „' + isbn + '“ …</p>');
 
+    // 0) Eigener Worker (Google Books + DNB + Open Library serverseitig kombiniert)
+    if(WORKER_URL){
+      try{
+        const wRes = await fetch(WORKER_URL + '?isbn=' + encodeURIComponent(isbn));
+        const wData = await wRes.json();
+        if(wData && wData.title){
+          setScanStatus('');
+          pendingBook = {
+            isbn: isbn,
+            title: wData.title,
+            author: wData.author || 'Unbekannt',
+            cover: wData.cover || null,
+            year: wData.year || '',
+            status: 'want',
+            dateAdded: new Date().toISOString().slice(0,10),
+            dateFinished: null
+          };
+          openCatalogCard(pendingBook, true);
+          return;
+        }
+        // Worker konnte nichts finden -> direkt manuelle Erfassung anbieten
+        setScanStatus('');
+        openManualCard(isbn);
+        return;
+      }catch(err){
+        // Worker nicht erreichbar -> auf direkte Abfragen zurückfallen
+      }
+    }
+
     // 1) Google Books
     try{
       const res = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + encodeURIComponent(isbn));
@@ -551,10 +586,8 @@
       const entry = data2['ISBN:' + isbn];
       setScanStatus('');
       if(!entry){
-        setScanStatus(
-          '<p class="err-line">Kein Eintrag zu ISBN ' + escapeHtml(isbn) + ' gefunden (weder Google Books noch Open Library). ' +
-          'Du kannst das Buch später von Hand ergänzen, sobald das möglich ist.</p>'
-        );
+        setScanStatus('');
+        openManualCard(isbn);
         return;
       }
       pendingBook = {
@@ -569,8 +602,130 @@
       };
       openCatalogCard(pendingBook, true);
     }catch(err){
-      setScanStatus('<p class="err-line">Suche fehlgeschlagen. Verbindung prüfen.</p>');
+      setScanStatus('');
+      openManualCard(isbn);
     }
+  }
+
+  // --- Manual entry card (used when no database has the ISBN) ---
+  function openManualCard(isbn){
+    cardEl.innerHTML = `
+      <button class="card-close" id="cardCloseBtn" aria-label="Schliessen">×</button>
+      <p class="card-eyebrow">Nicht in Google Books oder Open Library gefunden</p>
+
+      <div style="padding-left:4px;margin-bottom:14px;">
+        <button class="btn btn-ghost" id="ocrTriggerBtn" style="width:100%;">📷 Buchrücken fotografieren &amp; Text erkennen</button>
+        <input type="file" accept="image/*" capture="environment" id="ocrFileInput" style="display:none;">
+        <div id="ocrStatus" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--wine);margin-top:8px;"></div>
+        <div id="ocrLines" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="card-meta" style="padding-left:4px;">
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Titel</label>
+        <input type="text" id="manualTitle" placeholder="Buchtitel eingeben"
+          style="width:100%;font-family:'Fraunces',serif;font-size:17px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);margin-bottom:12px;">
+        <label style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--wine);margin-bottom:4px;">Autor:in</label>
+        <input type="text" id="manualAuthor" placeholder="Autor:in eingeben"
+          style="width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:8px 2px;border:none;border-bottom:1px solid rgba(34,32,27,0.25);background:transparent;color:var(--ink);">
+      </div>
+      <p class="card-row">ISBN&nbsp; ${escapeHtml(isbn)}</p>
+      <div class="status-picker">
+        <label>Status</label>
+        <div class="status-opts" id="statusOpts">
+          ${STATUSES.map(s => `<button data-status="${s.key}" class="${s.key==='want'?'sel':''}">${s.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-primary" id="cardSaveBtn">Zur Bibliothek hinzufügen</button>
+      </div>
+    `;
+    backdrop.classList.add('show');
+    let chosenStatus = 'want';
+
+    document.getElementById('cardCloseBtn').addEventListener('click', closeCatalogCard);
+    document.getElementById('statusOpts').addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-status]');
+      if(!btn) return;
+      chosenStatus = btn.dataset.status;
+      document.querySelectorAll('#statusOpts button').forEach(b=>b.classList.toggle('sel', b.dataset.status===chosenStatus));
+    });
+
+    // --- OCR: Foto aufnehmen -> Text erkennen -> Zeilen zum Zuweisen anzeigen ---
+    const ocrTrigger = document.getElementById('ocrTriggerBtn');
+    const ocrInput = document.getElementById('ocrFileInput');
+    const ocrStatus = document.getElementById('ocrStatus');
+    const ocrLines = document.getElementById('ocrLines');
+
+    ocrTrigger.addEventListener('click', ()=> ocrInput.click());
+    ocrInput.addEventListener('change', async ()=>{
+      const file = ocrInput.files && ocrInput.files[0];
+      if(!file) return;
+      ocrLines.innerHTML = '';
+      ocrStatus.textContent = 'Foto wird gelesen … (kann beim ersten Mal 20–30 Sek. dauern)';
+      try{
+        const imgUrl = URL.createObjectURL(file);
+        const result = await Tesseract.recognize(imgUrl, 'deu+eng', {
+          logger: (m)=>{
+            if(m.status === 'recognizing text' && m.progress != null){
+              ocrStatus.textContent = 'Erkenne Text … ' + Math.round(m.progress * 100) + '%';
+            }
+          }
+        });
+        URL.revokeObjectURL(imgUrl);
+        const lines = (result.data.text || '')
+          .split('\n')
+          .map(l=>l.trim())
+          .filter(l=>l.length > 1);
+        if(lines.length === 0){
+          ocrStatus.textContent = 'Kein Text erkannt -- versuch ein schärferes, gerade ausgerichtetes Foto.';
+          return;
+        }
+        ocrStatus.textContent = 'Erkannt -- tippe auf "Titel" oder "Autor:in", um eine Zeile zu übernehmen:';
+        ocrLines.innerHTML = lines.map((line, i) => `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+            <span style="flex:1;font-family:'Inter',sans-serif;font-size:12.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(line)}</span>
+            <button type="button" data-line="${i}" data-target="title" style="font-size:10px;padding:4px 7px;border:1px solid rgba(34,32,27,0.25);background:transparent;border-radius:2px;cursor:pointer;color:var(--ink);">Titel</button>
+            <button type="button" data-line="${i}" data-target="author" style="font-size:10px;padding:4px 7px;border:1px solid rgba(34,32,27,0.25);background:transparent;border-radius:2px;cursor:pointer;color:var(--ink);">Autor:in</button>
+          </div>
+        `).join('');
+        ocrLines.querySelectorAll('button[data-line]').forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            const line = lines[parseInt(btn.dataset.line, 10)];
+            if(btn.dataset.target === 'title'){
+              document.getElementById('manualTitle').value = line;
+            } else {
+              document.getElementById('manualAuthor').value = line;
+            }
+          });
+        });
+      }catch(err){
+        ocrStatus.textContent = 'Texterkennung fehlgeschlagen. Bitte manuell eingeben.';
+      }
+    });
+
+    document.getElementById('cardSaveBtn').addEventListener('click', ()=>{
+      const title = document.getElementById('manualTitle').value.trim();
+      const author = document.getElementById('manualAuthor').value.trim();
+      if(!title){
+        document.getElementById('manualTitle').style.borderBottomColor = 'var(--wine)';
+        document.getElementById('manualTitle').focus();
+        return;
+      }
+      const book = {
+        isbn: isbn,
+        title: title,
+        author: author || 'Unbekannt',
+        cover: null,
+        year: '',
+        status: chosenStatus,
+        dateAdded: new Date().toISOString().slice(0,10),
+        dateFinished: chosenStatus === 'done' ? new Date().toISOString().slice(0,10) : null
+      };
+      library.push(book);
+      closeCatalogCard();
+      renderLibrary();
+      document.querySelector('nav.tabs button[data-tab="library"]').click();
+    });
   }
 
   // --- Catalog card modal ---
