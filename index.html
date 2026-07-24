@@ -607,6 +607,48 @@
     }
   }
 
+  // Bereitet ein Foto für die Texterkennung vor: skaliert, macht Graustufen
+  // und verstärkt den Kontrast -- das hilft der Texterkennung deutlich,
+  // besonders bei Fotos mit ungleichmässigem Licht.
+  function preprocessImage(file){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const maxDim = 1800;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const d = imgData.data;
+        // Graustufen berechnen
+        let min = 255, max = 0;
+        const gray = new Uint8ClampedArray(w * h);
+        for(let i = 0; i < d.length; i += 4){
+          const g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+          gray[i/4] = g;
+          if(g < min) min = g;
+          if(g > max) max = g;
+        }
+        // Kontrast strecken (min..max -> 0..255)
+        const range = Math.max(1, max - min);
+        for(let i = 0; i < d.length; i += 4){
+          const v = ((gray[i/4] - min) / range) * 255;
+          d[i] = d[i+1] = d[i+2] = v;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        resolve(canvas);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
   // --- Manual entry card (used when no database has the ISBN) ---
   function openManualCard(isbn){
     cardEl.innerHTML = `
@@ -614,7 +656,11 @@
       <p class="card-eyebrow">Nicht in Google Books oder Open Library gefunden</p>
 
       <div style="padding-left:4px;margin-bottom:14px;">
-        <button class="btn btn-ghost" id="ocrTriggerBtn" style="width:100%;">📷 Buchrücken fotografieren &amp; Text erkennen</button>
+        <button class="btn btn-ghost" id="ocrTriggerBtn" style="width:100%;">📷 Titelseite fotografieren &amp; Text erkennen</button>
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft);margin:6px 0 0;line-height:1.5;">
+          Am besten funktioniert das mit dem <strong>bedruckten Titelblatt im Buchinneren</strong>
+          (schlichter schwarzer Text auf weiss) -- nicht mit dem bunten Umschlag, den erkennt die Texterkennung schlecht.
+        </p>
         <input type="file" accept="image/*" capture="environment" id="ocrFileInput" style="display:none;">
         <div id="ocrStatus" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--wine);margin-top:8px;"></div>
         <div id="ocrLines" style="margin-top:8px;"></div>
@@ -661,23 +707,31 @@
       const file = ocrInput.files && ocrInput.files[0];
       if(!file) return;
       ocrLines.innerHTML = '';
-      ocrStatus.textContent = 'Foto wird gelesen … (kann beim ersten Mal 20–30 Sek. dauern)';
+      ocrStatus.textContent = 'Foto wird vorbereitet …';
       try{
-        const imgUrl = URL.createObjectURL(file);
-        const result = await Tesseract.recognize(imgUrl, 'deu+eng', {
+        const processedCanvas = await preprocessImage(file);
+        ocrStatus.textContent = 'Foto wird gelesen … (kann beim ersten Mal 20–30 Sek. dauern)';
+        const result = await Tesseract.recognize(processedCanvas, 'deu+eng', {
+          tessedit_pageseg_mode: 'sparse_text',
           logger: (m)=>{
             if(m.status === 'recognizing text' && m.progress != null){
               ocrStatus.textContent = 'Erkenne Text … ' + Math.round(m.progress * 100) + '%';
             }
           }
         });
-        URL.revokeObjectURL(imgUrl);
-        const lines = (result.data.text || '')
-          .split('\n')
-          .map(l=>l.trim())
-          .filter(l=>l.length > 1);
+        const rawLines = (result.data.text || '').split('\n').map(l=>l.trim());
+        // Zeilen ohne echten, zusammenhängenden Text (Bildrauschen etc.) rausfiltern
+        const lines = rawLines.filter(line=>{
+          if(line.length < 3) return false;
+          const letters = (line.match(/[a-zA-ZäöüÄÖÜß]/g) || []).length;
+          if(letters < 3) return false;
+          if(letters / line.length < 0.55) return false;
+          // mind. ein "Wort" mit 3+ zusammenhängenden Buchstaben
+          if(!/[a-zA-ZäöüÄÖÜß]{3,}/.test(line)) return false;
+          return true;
+        });
         if(lines.length === 0){
-          ocrStatus.textContent = 'Kein Text erkannt -- versuch ein schärferes, gerade ausgerichtetes Foto.';
+          ocrStatus.textContent = 'Kein verwertbarer Text erkannt -- versuch das Titelblatt im Buchinneren statt des Umschlags, bei gutem Licht und möglichst gerade ausgerichtet.';
           return;
         }
         ocrStatus.textContent = 'Erkannt -- tippe auf "Titel" oder "Autor:in", um eine Zeile zu übernehmen:';
