@@ -407,12 +407,27 @@
     </section>
   </main>
 
-  <p class="footer-note">Prototyp · Daten bleiben nur für diese Sitzung gespeichert</p>
+  <p class="footer-note" id="footerNote">Prototyp · Daten bleiben nur für diese Sitzung gespeichert</p>
 </div>
 
 <!-- Catalog card modal -->
 <div class="card-backdrop" id="cardBackdrop">
   <div class="index-card" id="indexCard"></div>
+</div>
+
+<!-- Zugangscode-Gate (nur sichtbar, wenn WORKER_URL gesetzt ist) -->
+<div class="card-backdrop" id="gateBackdrop" style="display:none;">
+  <div class="index-card">
+    <p class="card-eyebrow">Zugang zur Bibliothek</p>
+    <p style="font-family:'Inter',sans-serif;font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;">Gib deinen persönlichen Zugangscode ein, um deine Bibliothek zu laden.</p>
+    <input type="password" id="gateCodeInput" placeholder="Zugangscode"
+      style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:14px;padding:10px;border:1px solid rgba(34,32,27,0.25);border-radius:2px;background:transparent;color:var(--ink);margin-bottom:10px;">
+    <label style="display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);margin-bottom:14px;">
+      <input type="checkbox" id="gateRemember" checked> auf diesem Gerät merken
+    </label>
+    <div id="gateError" style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--wine);margin-bottom:10px;"></div>
+    <button class="btn btn-primary" id="gateSubmit" style="width:100%;">Öffnen</button>
+  </div>
 </div>
 
 <script>
@@ -423,15 +438,82 @@
     {key:'done', label:'Gelesen', stamp:'✓', color:'#4C6B4F'}
   ];
 
-  // Trage hier die Adresse deines Cloudflare Workers ein, z.B.
-  // "https://buch-lookup.deinname.workers.dev" -- ohne Schrägstrich am Ende.
-  // Leer lassen, um weiterhin nur Google Books + Open Library direkt zu nutzen.
-  const WORKER_URL = "";
+  // Adresse deines Cloudflare Workers (macht ISBN-Suche + Cloud-Speicherung).
+  const WORKER_URL = "https://buch-lookup.laura-decet.workers.dev";
 
   let library = []; // {isbn,title,author,cover,status,dateAdded,dateFinished}
   let pendingBook = null;
   let html5QrCode = null;
   let scanning = false;
+  let accessCode = null;
+  let cloudReady = false; // true, sobald erfolgreich mit dem Worker verbunden
+
+  // --- Cloud-Speicherung (nur aktiv, wenn WORKER_URL gesetzt ist) ---
+  async function cloudLoad(code){
+    const res = await fetch(WORKER_URL + '/library', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'load', code })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Laden fehlgeschlagen');
+    return data.data || [];
+  }
+
+  async function cloudSave(){
+    if(!cloudReady || !WORKER_URL || !accessCode) return;
+    try{
+      await fetch(WORKER_URL + '/library', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'save', code: accessCode, data: library })
+      });
+    }catch(err){ /* still lokal vorhanden, nächster Versuch bei nächster Änderung */ }
+  }
+
+  async function initGate(){
+    if(!WORKER_URL){
+      renderLibrary();
+      return; // kein Worker konfiguriert -> App läuft rein lokal wie bisher
+    }
+    document.getElementById('footerNote').textContent = 'Verbunden mit deiner Cloud-Bibliothek';
+    const gateBackdrop = document.getElementById('gateBackdrop');
+    const savedCode = localStorage.getItem('buchkartei_code');
+
+    async function tryCode(code){
+      const errEl = document.getElementById('gateError');
+      errEl.textContent = '';
+      try{
+        library = await cloudLoad(code);
+        accessCode = code;
+        cloudReady = true;
+        gateBackdrop.style.display = 'none';
+        renderLibrary();
+        return true;
+      }catch(err){
+        errEl.textContent = err.message === 'Falscher Zugangscode' ? 'Falscher Zugangscode.' : 'Verbindung fehlgeschlagen: ' + err.message;
+        return false;
+      }
+    }
+
+    if(savedCode){
+      const ok = await tryCode(savedCode);
+      if(ok) return;
+    }
+
+    gateBackdrop.style.display = 'flex';
+    document.getElementById('gateSubmit').addEventListener('click', async ()=>{
+      const code = document.getElementById('gateCodeInput').value.trim();
+      if(!code) return;
+      const ok = await tryCode(code);
+      if(ok && document.getElementById('gateRemember').checked){
+        localStorage.setItem('buchkartei_code', code);
+      }
+    });
+    document.getElementById('gateCodeInput').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') document.getElementById('gateSubmit').click();
+    });
+  }
 
   const tabs = document.querySelectorAll('nav.tabs button');
   const sections = { scan: document.getElementById('tab-scan'), library: document.getElementById('tab-library') };
@@ -848,6 +930,7 @@
       library.push(book);
       closeCatalogCard();
       renderLibrary();
+      cloudSave();
       document.querySelector('nav.tabs button[data-tab="library"]').click();
     });
   }
@@ -930,6 +1013,7 @@
       }
       closeCatalogCard();
       renderLibrary();
+      cloudSave();
       document.querySelector('nav.tabs button[data-tab="library"]').click();
     });
     const delBtn = document.getElementById('cardDeleteBtn');
@@ -938,6 +1022,7 @@
         library = library.filter(b=>b.isbn !== book.isbn);
         closeCatalogCard();
         renderLibrary();
+        cloudSave();
       });
     }
   }
@@ -989,7 +1074,7 @@
     return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
-  renderLibrary();
+  initGate();
 })();
 </script>
 </body>
